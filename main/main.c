@@ -28,9 +28,7 @@ static void event_handler(lv_obj_t * obj, lv_event_t event);
 
 void guiTask();
 void event_handler(lv_obj_t * obj, lv_event_t event);
-void lv_ex_list_1(void);
-
-
+uint8_t id = 3;
 /**********************
  *   APPLICATION MAIN
  **********************/
@@ -88,40 +86,55 @@ void guiTask() {
 
     /* use a pretty small demo for 128x64 monochrome displays */
     lv_obj_t * scr = lv_disp_get_scr_act(NULL);     /*Get the current screen*/
+	/*Create a Tab view object*/
+    lv_obj_t *tabview;
 
-	lv_obj_t * list1 = lv_list_create(lv_scr_act(), NULL);
-	lv_obj_set_size(list1, 128, 64);
-	lv_obj_align(list1, NULL, LV_ALIGN_CENTER, 0, 0);
+    tabview = lv_tabview_create(lv_scr_act(), NULL);
+	lv_style_t style1 = lv_style_transp, style2 = lv_style_plain_color, style3 = lv_style_transp;
+	lv_tabview_set_anim_time(tabview, 800);
+	// lv_style_plain_color  lv_style_transp
+    /*Add 2 tabs (the tabs are page (lv_page) and can be scrolled*/
+    lv_obj_t *tab1 = lv_tabview_add_tab(tabview, "SET");
+    lv_obj_t *tab2 = lv_tabview_add_tab(tabview, "STATS");
 
-	/*Add buttons to the list*/
 
-	lv_obj_t * list_btn;
+	style1.body.padding.top = 1;
+	style1.body.padding.bottom = 2;
+	// style1.body.shadow.color = LV_COLOR_WHITE;
+	lv_tabview_set_style(tabview, LV_TABVIEW_STYLE_BTN_BG,  &style1);
 
-	list_btn = lv_list_add_btn(list1, LV_SYMBOL_FILE, "Waveform");
-	lv_obj_set_event_cb(list_btn, event_handler);
+	// style2.body.radius = 10;
+	style2.body.padding.inner = 0;
+	// style2.body.grad_color = LV_COLOR_WHITE;
+	//
+	// style2.body.padding.bottom = 00;
+	// style2.body.padding.top = 00;
+	lv_tabview_set_style(tabview, LV_TABVIEW_STYLE_INDIC,  &style2);
 
-	list_btn = lv_list_add_btn(list1, LV_SYMBOL_DIRECTORY, "Amplitude");
-	lv_obj_set_event_cb(list_btn, event_handler);
+	style3.body.padding.top = 3;
+	style3.body.padding.bottom = 2;
+	lv_tabview_set_style(tabview, LV_TABVIEW_STYLE_BTN_REL,  &style3);
+	lv_obj_refresh_style(tabview);
 
-	list_btn = lv_list_add_btn(list1, LV_SYMBOL_CLOSE, "Frequency");
-	lv_obj_set_event_cb(list_btn, event_handler);
 
-	list_btn = lv_list_add_btn(list1, LV_SYMBOL_EDIT, "Sleep");
-	lv_obj_set_event_cb(list_btn, event_handler);
+    /*Add content to the tabs*/
+    lv_obj_t * label = lv_label_create(tab1, NULL);
+    lv_label_set_text(label, "First tab");
 
-	list_btn = lv_list_add_btn(list1, LV_SYMBOL_SAVE, "Power Off");
-	lv_obj_set_event_cb(list_btn, event_handler);
+    label = lv_label_create(tab2, NULL);
+    lv_label_set_text(label, "Second tab");
 
-	lv_list_set_scroll_propagation(list1, true);
-	lv_list_set_anim_time(list1, 1500);
-	lv_list_focus(list_btn, LV_ANIM_ON);
-	lv_list_set_btn_selected(list1, list_btn);
-	// lv_list_up(list1);
+
 	void pseudo_button(lv_task_t *task){
 		lv_obj_t *list1 = task->user_data;
-		lv_list_down(list1);
+		lv_tabview_set_tab_act(list1, id, LV_ANIM_ON);
+		// printf("now %d\n",id);
+		if(id >= 3) id = 0;
+		else id++;
+		// else printf("change\n");
+
 	}
-	lv_task_t *pseudo_button_task = lv_task_create(pseudo_button, 2000, LV_TASK_PRIO_MID, list1);
+	lv_task_t *pseudo_button_task = lv_task_create(pseudo_button, 2000, LV_TASK_PRIO_MID, tabview);
 
 
 
@@ -138,38 +151,4 @@ void guiTask() {
 
     //A task should NEVER return
     vTaskDelete(NULL);
-}
-
-static void event_handler(lv_obj_t * obj, lv_event_t event)
-{
-    if(event == LV_EVENT_CLICKED) {
-        printf("Clicked: %s\n", lv_list_get_btn_text(obj));
-    }
-}
-
-void lv_ex_list_1(void)
-{
-    /*Create a list*/
-    lv_obj_t * list1 = lv_list_create(lv_scr_act(), NULL);
-    lv_obj_set_size(list1, 128, 64);
-    lv_obj_align(list1, NULL, LV_ALIGN_CENTER, 0, 0);
-
-    /*Add buttons to the list*/
-
-    lv_obj_t * list_btn;
-
-    list_btn = lv_list_add_btn(list1, LV_SYMBOL_FILE, "New");
-    lv_obj_set_event_cb(list_btn, event_handler);
-
-    list_btn = lv_list_add_btn(list1, LV_SYMBOL_DIRECTORY, "Open");
-    lv_obj_set_event_cb(list_btn, event_handler);
-
-    list_btn = lv_list_add_btn(list1, LV_SYMBOL_CLOSE, "Delete");
-    lv_obj_set_event_cb(list_btn, event_handler);
-
-    list_btn = lv_list_add_btn(list1, LV_SYMBOL_EDIT, "Edit");
-    lv_obj_set_event_cb(list_btn, event_handler);
-
-    list_btn = lv_list_add_btn(list1, LV_SYMBOL_SAVE, "Save");
-    lv_obj_set_event_cb(list_btn, event_handler);
 }
