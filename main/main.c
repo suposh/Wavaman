@@ -99,7 +99,8 @@ void guiTask() {
 
 
 	style1.body.padding.top = 1;
-	style1.body.padding.bottom = 2;
+	style1.body.padding.bottom = 1;
+	// style1.body.radius = 2;
 	// style1.body.shadow.color = LV_COLOR_WHITE;
 	lv_tabview_set_style(tabview, LV_TABVIEW_STYLE_BTN_BG,  &style1);
 
@@ -112,7 +113,7 @@ void guiTask() {
 	lv_tabview_set_style(tabview, LV_TABVIEW_STYLE_INDIC,  &style2);
 
 	style3.body.padding.top = 3;
-	style3.body.padding.bottom = 2;
+	style3.body.padding.bottom = 1;
 	lv_tabview_set_style(tabview, LV_TABVIEW_STYLE_BTN_REL,  &style3);
 	lv_obj_refresh_style(tabview);
 
@@ -129,7 +130,7 @@ void guiTask() {
 		lv_obj_t *list1 = task->user_data;
 		lv_tabview_set_tab_act(list1, id, LV_ANIM_ON);
 		// printf("now %d\n",id);
-		if(id >= 3) id = 0;
+		if(id >= 1) id = 0;
 		else id++;
 		// else printf("change\n");
 
