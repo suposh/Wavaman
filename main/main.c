@@ -112,19 +112,37 @@ void guiTask() {
 
     /*Create a list*/
     lv_obj_t * list1 = lv_list_create(tab1, NULL);
-    lv_obj_set_size(list1, 115, 40);
+    lv_obj_set_size(list1, 115, 33);
 	lv_page_set_sb_mode(list1, LV_SB_MODE_OFF); 	// Disable Scroll Bar
     lv_obj_align(list1, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_list_set_anim_time(list1, 100);
+	lv_list_set_layout(list1, LV_LAYOUT_COL_L);
 
-	lv_style_t style4 = lv_style_transp_fit, style5 = lv_style_btn_rel;
-	style4.body.border.width = 0;
+	lv_style_t style4 = lv_style_transp_fit;
+	style4.body.border.width =0;
+	// style4.body.padding.top = 0;
+	// style4.body.padding.top = 0;
 	lv_list_set_style(list1, LV_LIST_STYLE_BG, &style4);
+
+	lv_style_t style5 = lv_style_transp_fit; //lv_style_pretty
+	style5.body.padding.inner = 0;
+	style5.body.border.width = 0;
+	// style5.body.padding.top = -5;
+	lv_list_set_style(list1, LV_LIST_STYLE_SCRL, &style5);
 
     lv_obj_t * list_btn[5];
 
 	// Long Strings cause glitchy scroll, in the button label.
     list_btn[0] = lv_list_add_btn(list1, NULL, "1.Frequency");
 	lv_obj_set_event_cb(list_btn[0], event_handler);
+
+	// To adjust the height of an individual list button,
+	// dimensions of the container need to be changed.
+	lv_style_t style6 = lv_style_pretty;
+	style6.body.padding.top = 4;
+	style6.body.padding.bottom = 4;
+	style6.body.radius = 0;
+	lv_btn_set_style(list_btn[0],LV_CONT_STYLE_MAIN, &style6);
 
     list_btn[1] = lv_list_add_btn(list1, NULL, "2.Amplitude");
     lv_obj_set_event_cb(list_btn[1], event_handler);
@@ -163,7 +181,7 @@ void guiTask() {
 			// lv_list_down(list);
 			printf("id %d\t dir%d\n",id, dir);
 			lv_list_focus(btn[id], LV_ANIM_ON);
-			lv_list_set_btn_selected(list, btn[id]);
+			// lv_list_set_btn_selected(list, btn[id]);
 			if(id == 0) {
 				dir = -1;
 				id++;
@@ -174,7 +192,7 @@ void guiTask() {
 			// lv_list_up(list);
 			printf("id %d\t dir%d\n",id, dir);
 			lv_list_focus(btn[id], LV_ANIM_ON);
-			lv_list_set_btn_selected(list, btn[id]);
+			// lv_list_set_btn_selected(list, btn[id]);
 			if(id == 4){
 				dir = 1;
 				id--;
