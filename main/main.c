@@ -112,55 +112,32 @@ void guiTask() {
 
     /*Create a list*/
     lv_obj_t * list1 = lv_list_create(tab1, NULL);
-	// lv_list_set_single_mode(list1, true)
-    lv_obj_set_size(list1, 115, 45);
-	lv_page_set_sb_mode(list1, LV_SB_MODE_OFF);
+    lv_obj_set_size(list1, 115, 40);
+	lv_page_set_sb_mode(list1, LV_SB_MODE_OFF); 	// Disable Scroll Bar
     lv_obj_align(list1, NULL, LV_ALIGN_CENTER, 0, 0);
-	// lv_list_set_scroll_propagation(list1, false);
 
 	lv_style_t style4 = lv_style_transp_fit, style5 = lv_style_btn_rel;
-	//
 	style4.body.border.width = 0;
-	// // style4.body.padding.inner -= 5;
 	lv_list_set_style(list1, LV_LIST_STYLE_BG, &style4);
-	//
-	// style5.body.padding.bottom += 0;
-	// style5.body.padding.top += 10;
-	// // style5.body.padding.inner -= 10 ;
-	// lv_list_set_style(list1, LV_LIST_STYLE_BTN_REL, &style5);
-    // /*Add buttons to the list*/
 
     lv_obj_t * list_btn[5];
 
+	// Long Strings cause glitchy scroll, in the button label.
     list_btn[0] = lv_list_add_btn(list1, NULL, "1.Frequency");
 	lv_obj_set_event_cb(list_btn[0], event_handler);
-	//
-	// lv_obj_set_size(list_btn[0], 50, 10);
 
     list_btn[1] = lv_list_add_btn(list1, NULL, "2.Amplitude");
     lv_obj_set_event_cb(list_btn[1], event_handler);
-	// lv_list_set_btn_selected(list1, list_btn[1]);
-	// lv_obj_set_size(list_btn[1], 50, 10);
-	// lv_obj_align(list_btn[1], NULL, LV_ALIGN_IN_TOP_MID, 0, 0);
 
     list_btn[2] = lv_list_add_btn(list1, NULL, "3.Waveform");
     lv_obj_set_event_cb(list_btn[2], event_handler);
 
-	list_btn[3] = lv_list_add_btn(list1, NULL, "4.Digital");	//Input
+	list_btn[3] = lv_list_add_btn(list1, NULL, "4.Logic In");
     lv_obj_set_event_cb(list_btn[3], event_handler);
-	// lv_list_set_btn_selected(list1, list_btn[3]);
-	//
-	list_btn[4] = lv_list_add_btn(list1, NULL, "5.Sleep");	// timeout
+
+	list_btn[4] = lv_list_add_btn(list1, NULL, "5.Stats");
     lv_obj_set_event_cb(list_btn[4], event_handler);
 
-	// lv_obj_align(list_btn[5], NULL, LV_ALIGN_IN_TOP_MID, 0, 0);
-	// lv_list_focus(list_btn[5], LV_ANIM_ON);
-	// lv_list_focus(list_btn[2], LV_ANIM_ON);
-	// lv_list_set_btn_selected(list1, list_btn[2]);
-
-	// lv_list_up(list1);
-	// lv_list_up(list1);
-	// lv_list_up(list1);
 
 	struct ls{
 		lv_obj_t *btn[5];
@@ -185,7 +162,7 @@ void guiTask() {
 		if(dir == 1){		// go down
 			// lv_list_down(list);
 			printf("id %d\t dir%d\n",id, dir);
-			lv_list_focus(btn[id], LV_ANIM_OFF);
+			lv_list_focus(btn[id], LV_ANIM_ON);
 			lv_list_set_btn_selected(list, btn[id]);
 			if(id == 0) {
 				dir = -1;
@@ -196,7 +173,7 @@ void guiTask() {
 		else{		// go up
 			// lv_list_up(list);
 			printf("id %d\t dir%d\n",id, dir);
-			lv_list_focus(btn[id], LV_ANIM_OFF);
+			lv_list_focus(btn[id], LV_ANIM_ON);
 			lv_list_set_btn_selected(list, btn[id]);
 			if(id == 4){
 				dir = 1;
