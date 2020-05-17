@@ -211,10 +211,12 @@ void guiTask() {
 					printf("Delete Menu objects\n");
 			        break;
 			    case MENU_FREQUENCY_SET_SCREEN:
-					printf("Delete old FREQUENCY stuff\n");
-					lv_group_del(spinbox_input_group);
-					lv_indev_enable(keypad_LR_Button, false);
-					lv_obj_del(spinbox_frequency);
+					if(spinbox_frequency != NULL){
+						printf("Delete old FREQUENCY stuff\n");
+						lv_group_del(spinbox_input_group);
+						lv_indev_enable(keypad_LR_Button, false);
+						lv_obj_del(spinbox_frequency);
+					}
 					lv_tabview_clean(tab1);
 			        break;
 				case MENU_AMPLITUDE_SET_SCREEN:
@@ -302,13 +304,18 @@ void guiTask() {
 					lv_spinbox_step_prev(spinbox_frequency);
 					lv_obj_set_width(spinbox_frequency, 110);
 					lv_spinbox_set_range(spinbox_frequency, 1, 268435456);
-					lv_obj_align(spinbox_frequency, NULL, LV_ALIGN_CENTER, 0, 0);
 					lv_obj_set_event_cb(spinbox_frequency, spinbox_frequency_cb);
 
-					// spinbox_text_style = lv_spinbox_get_style(spinbox_frequency, LV_LABEL_STYLE_MAIN);
-					// spinbox_text_style->text.letter_space = 2;
-					// lv_spinbox_set_style(spinbox_frequency, LV_LABEL_STYLE_MAIN, spinbox_text_style);
+					spinbox_text_style = lv_spinbox_get_style(spinbox_frequency, LV_LABEL_STYLE_MAIN);
+					spinbox_text_style->text.letter_space = 2;
+					// spinbox_text_style->body.border.width = 0;
+					lv_spinbox_set_style(spinbox_frequency, LV_LABEL_STYLE_MAIN, spinbox_text_style);
 
+					spinbox_text_style = lv_spinbox_get_style(spinbox_frequency, LV_SPINBOX_STYLE_BG);
+					spinbox_text_style->body.padding.top = 7;
+					spinbox_text_style->body.padding.bottom = 2;
+					spinbox_text_style->body.border.width = 1;
+					lv_spinbox_set_style(spinbox_frequency, LV_SPINBOX_STYLE_BG, spinbox_text_style);
 
 					spinbox_cursor_style = lv_spinbox_get_style(spinbox_frequency, LV_SPINBOX_STYLE_CURSOR);
 					// spinbox_cursor_style->line.width = 1;
@@ -318,9 +325,20 @@ void guiTask() {
 					spinbox_cursor_style->body.padding.left  = 2;
 					spinbox_cursor_style->body.padding.top = 5;
 					spinbox_cursor_style->body.padding.bottom = 3;
-					// spinbox_cursor_style->body.opa = LV_OPA_TRANSP;
 					lv_spinbox_set_style(spinbox_frequency,LV_SPINBOX_STYLE_CURSOR, spinbox_cursor_style);
-					// lv_spinbox_set_padding_left(spinbox_frequency, 1);
+
+					lv_ta_set_cursor_type(spinbox_frequency, LV_CURSOR_BLOCK);
+					lv_spinbox_set_padding_left(spinbox_frequency, 1);
+					lv_ta_set_cursor_blink_time(spinbox_frequency, 0);
+
+					trial_text_label = lv_label_create(tab1, NULL);
+					lv_label_set_text(trial_text_label, "Set Frequency:");
+					lv_obj_align(spinbox_frequency, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -8);
+
+					spinbox_text_style = lv_label_get_style(trial_text_label, LV_LABEL_STYLE_MAIN);
+					spinbox_text_style->body.opa = LV_OPA_TRANSP;
+					spinbox_text_style->text.letter_space = -1;
+					lv_label_set_style(trial_text_label, LV_LABEL_STYLE_MAIN, spinbox_text_style);
 
 					spinbox_input_group = lv_group_create();
 					lv_group_add_obj(spinbox_input_group, spinbox_frequency);
