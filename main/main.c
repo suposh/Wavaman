@@ -35,7 +35,8 @@ static void IRAM_ATTR lv_tick_task(void *arg);
 // static void event_handler(lv_obj_t * obj, lv_event_t event);
 
 static uint8_t Current_Screen = 1;
-static uint8_t Change_Screen = 1;
+static uint8_t Change_Screen  = 1;
+static uint8_t Next_Screen    = 1;
 /**********************
  *   APPLICATION MAIN
  **********************/
@@ -70,7 +71,7 @@ void guiTask() {
 	static lv_obj_t *tabview, *tab1, *tab2;		//Create tabs
     static lv_obj_t *list1, *list_btn ;			/*Create a list*/
 	static lv_group_t * g;
-	static lv_obj_t * te;
+	static lv_obj_t * te = NULL;
 
     lv_disp_buf_init(&disp_buf, buf1, buf2, DISP_BUF_SIZE);
 
@@ -171,110 +172,141 @@ void guiTask() {
             xSemaphoreGive(xGuiSemaphore);
 			// vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
-		if (Current_Screen == MENU_SCREEN && Change_Screen == 1 ){
-			if(te) {
-				lv_obj_del(te);
-				lv_obj_set_hidden(te, true);
-				lv_obj_set_hidden(list1, false);
-				lv_tabview_clean(tab1);
-				printf("Delete old objects\n");
+
+		if (Change_Screen){
+			switch (Current_Screen){
+			    case MENU_SCREEN:
+					if(te != NULL){
+						lv_obj_del(te);
+						lv_obj_set_hidden(te, true);
+						lv_obj_set_hidden(list1, false);
+					}
+					lv_tabview_clean(tab1);
+					printf("Delete Menu objects\n");
+			        break;
+			    case MENU_FREQUENCY_SET_SCREEN:
+					lv_obj_del(te);
+					lv_obj_set_hidden(te, true);
+					lv_tabview_clean(tab1);
+			        break;
+				case MENU_AMPLITUDE_SET_SCREEN:
+					lv_obj_del(te);
+					lv_obj_set_hidden(te, true);
+					lv_tabview_clean(tab1);
+			        break;
+				case MENU_WAVEFORM_SET_SCREEN:
+					lv_obj_del(te);
+					lv_obj_set_hidden(te, true);
+					lv_tabview_clean(tab1);
+					break;
+				case MENU_LOGIC_SET_SCREEN:
+					lv_obj_del(te);
+					lv_obj_set_hidden(te, true);
+					lv_tabview_clean(tab1);
+					break;
+			    case MENU_STATS_SET_SCREEN:
+					lv_obj_del(te);
+					lv_obj_set_hidden(te, true);
+					lv_tabview_clean(tab1);
+					break;
 			}
-			printf("MENU_SCREEN\n");
-			list1 = lv_list_create(tab1, NULL);
-			lv_obj_set_size(list1, 128, 50);
-			lv_obj_align(list1, NULL,  LV_ALIGN_IN_TOP_LEFT, 0, 0);
-			lv_list_set_anim_time(list1, 60);
-			lv_list_set_sb_mode(list1, LV_SB_MODE_OFF); 	// LIST Disable Scroll Bar
-			lv_list_set_single_mode(list1, true);
+			switch (Next_Screen){
 
-			style4.body.border.width =0;
-			style4.body.padding.left = -1;
-			style4.body.padding.right = -1;
-			// style4.body.padding.top = 0;
-			lv_list_set_style(list1, LV_LIST_STYLE_BG, &style4);
+				case MENU_SCREEN:
+					printf("MENU_SCREEN\n");
+					list1 = lv_list_create(tab1, NULL);
+					lv_obj_set_size(list1, 128, 50);
+					lv_obj_align(list1, NULL,  LV_ALIGN_IN_TOP_LEFT, 0, 0);
+					lv_list_set_anim_time(list1, 60);
+					lv_list_set_sb_mode(list1, LV_SB_MODE_OFF); 	// LIST Disable Scroll Bar
+					lv_list_set_single_mode(list1, true);
 
-			style5.body.padding.inner = -3;
-			style5.body.border.width = 0;
-			// style5.body.padding.top = -5;
-			lv_list_set_style(list1, LV_LIST_STYLE_SCRL, &style5);
+					style4.body.border.width =0;
+					style4.body.padding.left = -1;
+					style4.body.padding.right = -1;
+					// style4.body.padding.top = 0;
+					lv_list_set_style(list1, LV_LIST_STYLE_BG, &style4);
 
-			// To adjust the height of an individual list button,
-			// dimensions of the container need to be changed.
-			style6.body.padding.top = 6;
-			style6.body.padding.bottom = 5;
-			style6.body.radius = 0;
+					style5.body.padding.inner = -3;
+					style5.body.border.width = 0;
+					// style5.body.padding.top = -5;
+					lv_list_set_style(list1, LV_LIST_STYLE_SCRL, &style5);
 
-			// Long Strings cause glitchy scroll, in the button label.
-			list_btn = lv_list_add_btn(list1, NULL, "1.Frequency");
-			lv_obj_set_event_cb(list_btn, select_frequency);
-			lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-			// lv_group_add_obj(g, list_btn);
+					// To adjust the height of an individual list button,
+					// dimensions of the container need to be changed.
+					style6.body.padding.top = 6;
+					style6.body.padding.bottom = 5;
+					style6.body.radius = 0;
 
-			list_btn = lv_list_add_btn(list1, NULL, "2.Amplitude");
-			lv_obj_set_event_cb(list_btn, select_amplitude);
-			lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-			// lv_group_add_obj(g, list_btn);
+					// Long Strings cause glitchy scroll, in the button label.
+					list_btn = lv_list_add_btn(list1, NULL, "1.Frequency");
+					lv_obj_set_event_cb(list_btn, select_frequency);
+					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					// lv_group_add_obj(g, list_btn);
 
-			list_btn = lv_list_add_btn(list1, NULL, "3.Waveform");
-			lv_obj_set_event_cb(list_btn, select_waveform);
-			lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-			// lv_list_set_btn_selected(list1, list_btn);
-			// lv_group_add_obj(g, list_btn);
+					list_btn = lv_list_add_btn(list1, NULL, "2.Amplitude");
+					lv_obj_set_event_cb(list_btn, select_amplitude);
+					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					// lv_group_add_obj(g, list_btn);
 
-			list_btn = lv_list_add_btn(list1, NULL, "4.Logic In");
-			lv_obj_set_event_cb(list_btn, select_logic);
-			lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-			// lv_group_add_obj(g, list_btn);
+					list_btn = lv_list_add_btn(list1, NULL, "3.Waveform");
+					lv_obj_set_event_cb(list_btn, select_waveform);
+					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					// lv_list_set_btn_selected(list1, list_btn);
+					// lv_group_add_obj(g, list_btn);
 
-			list_btn = lv_list_add_btn(list1, NULL, "5.Stats");
-			lv_obj_set_event_cb(list_btn, select_stats);
-			lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					list_btn = lv_list_add_btn(list1, NULL, "4.Logic In");
+					lv_obj_set_event_cb(list_btn, select_logic);
+					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					// lv_group_add_obj(g, list_btn);
 
-			g = lv_group_create();
-			lv_group_add_obj(g, list1);
-			lv_indev_set_group(list_input_keypad, g);
-			Change_Screen = 0;
-		}else if (Current_Screen == MENU_FREQUENCY_SET_SCREEN && Change_Screen == 1 ){
-			printf("MENU_FREQUENCY_SET_SCREEN\n");
-			lv_obj_set_hidden(list1, true);
-			lv_list_clean(list1);
-			lv_group_del(g);
-			te = lv_label_create(tab1, NULL);
-			lv_label_set_text(te, "New text");
-			Change_Screen = 0;
-		}else if (Current_Screen == MENU_AMPLITUDE_SET_SCREEN && Change_Screen == 1 ){
-			printf("MENU_AMPLITUDE_SET_SCREEN\n");
-			lv_obj_set_hidden(list1, true);
-			lv_list_clean(list1);
-			lv_group_del(g);
-			te = lv_label_create(tab1, NULL);
-			lv_label_set_text(te, "MENU_AMPLITUDE_SET_SCREEN");
-			Change_Screen = 0;
-		}else if (Current_Screen == MENU_WAVEFORM_SET_SCREEN && Change_Screen == 1 ){
-			printf("MENU_WAVEFORM_SET_SCREEN\n");
-			lv_obj_set_hidden(list1, true);
-			lv_list_clean(list1);
-			lv_group_del(g);
-			te = lv_label_create(tab1, NULL);
-			lv_label_set_text(te, "MENU_WAVEFORM_SET_SCREEN");
-			Change_Screen = 0;
-		}else if (Current_Screen == MENU_LOGIC_SET_SCREEN && Change_Screen == 1 ){
-			printf("MENU_LOGIC_SET_SCREEN\n");
-			lv_list_clean(list1);
-			lv_group_del(g);
-			te = lv_label_create(tab1, NULL);
-			lv_label_set_text(te, "MENU_LOGIC_SET_SCREEN");
-			Change_Screen = 0;
-		}else if (Current_Screen == MENU_STATS_SET_SCREEN && Change_Screen == 1 ){
-			printf("MENU_STATS_SET_SCREEN\n");
-			lv_obj_set_hidden(list1, true);
-			lv_list_clean(list1);
-			lv_group_del(g);
-			te = lv_label_create(tab1, NULL);
-			lv_label_set_text(te, "MENU_STATS_SET_SCREEN");
-			Change_Screen = 0;
+					list_btn = lv_list_add_btn(list1, NULL, "5.Stats");
+					lv_obj_set_event_cb(list_btn, select_stats);
+					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+
+					g = lv_group_create();
+					lv_group_add_obj(g, list1);
+					lv_indev_set_group(list_input_keypad, g);
+					Change_Screen = 0;
+					Current_Screen = Next_Screen;
+					break;
+				case MENU_FREQUENCY_SET_SCREEN:
+					printf("SET_FREQUENCY\n");
+					te = lv_label_create(tab1, NULL);
+					lv_label_set_text(te, "SET_FREQUENCY");
+					Change_Screen = 0;
+					Current_Screen = Next_Screen;
+					break;
+				case MENU_AMPLITUDE_SET_SCREEN:
+					printf("SET_AMPLITUDE\n");
+					te = lv_label_create(tab1, NULL);
+					lv_label_set_text(te, "SET_AMPLITUDE");
+					Change_Screen = 0;
+					Current_Screen = Next_Screen;
+					break;
+				case MENU_WAVEFORM_SET_SCREEN:
+					printf("SET_WAVEFORM\n");
+					te = lv_label_create(tab1, NULL);
+					lv_label_set_text(te, "SET_WAVEFORM");
+					Change_Screen = 0;
+					Current_Screen = Next_Screen;
+					break;
+				case MENU_LOGIC_SET_SCREEN:
+					printf("SET_LOGIC_IN\n");
+					te = lv_label_create(tab1, NULL);
+					lv_label_set_text(te, "SET_LOGIC_IN");
+					Change_Screen = 0;
+					Current_Screen = Next_Screen;
+					break;
+				case MENU_STATS_SET_SCREEN:
+					printf("OPEN_STATS\n");
+					te = lv_label_create(tab1, NULL);
+					lv_label_set_text(te, "OPEN_STATS");
+					Change_Screen = 0;
+					Current_Screen = Next_Screen;
+					break;
+			}
 		}
-
     }
 
     //A task should NEVER return
@@ -285,7 +317,7 @@ static void select_frequency(lv_obj_t * obj, lv_event_t event){
     if(event == LV_EVENT_PRESSED) {
 
         printf("Clicked: %s\n", lv_list_get_btn_text(obj));
-		Current_Screen = MENU_FREQUENCY_SET_SCREEN;
+		Next_Screen = MENU_FREQUENCY_SET_SCREEN;
 		lv_list_focus(obj, LV_ANIM_ON);
 		Change_Screen = 1;
 		// lv_list_set_btn_selected(list1, obj);
@@ -296,7 +328,7 @@ static void select_amplitude(lv_obj_t * obj, lv_event_t event){
     if(event == LV_EVENT_PRESSED) {
 
         printf("Clicked: %s\n", lv_list_get_btn_text(obj));
-		Current_Screen = MENU_AMPLITUDE_SET_SCREEN;
+		Next_Screen = MENU_AMPLITUDE_SET_SCREEN;
 		lv_list_focus(obj, LV_ANIM_ON);
 		Change_Screen = 1;
     }
@@ -306,7 +338,7 @@ static void select_waveform(lv_obj_t * obj, lv_event_t event){
     if(event == LV_EVENT_PRESSED) {
 
         printf("Clicked: %s\n", lv_list_get_btn_text(obj));
-		Current_Screen = MENU_WAVEFORM_SET_SCREEN;
+		Next_Screen = MENU_WAVEFORM_SET_SCREEN;
 		lv_list_focus(obj, LV_ANIM_ON);
 		Change_Screen = 1;
     }
@@ -316,7 +348,7 @@ static void select_logic(lv_obj_t * obj, lv_event_t event){
     if(event == LV_EVENT_PRESSED) {
 
         printf("Clicked: %s\n", lv_list_get_btn_text(obj));
-		Current_Screen = MENU_LOGIC_SET_SCREEN;
+		Next_Screen = MENU_LOGIC_SET_SCREEN;
 		lv_list_focus(obj, LV_ANIM_ON);
 		Change_Screen = 1;
     }
@@ -326,7 +358,7 @@ static void select_stats(lv_obj_t * obj, lv_event_t event){
     if(event == LV_EVENT_PRESSED) {
 
         printf("Clicked: %s\n", lv_list_get_btn_text(obj));
-		Current_Screen = MENU_STATS_SET_SCREEN;
+		Next_Screen = MENU_STATS_SET_SCREEN;
 		lv_list_focus(obj, LV_ANIM_ON);
 		Change_Screen = 1;
     }
@@ -358,11 +390,11 @@ static bool button_read(lv_indev_drv_t * drv, lv_indev_data_t*data){
 static bool back_button(lv_indev_drv_t * drv, lv_indev_data_t*data){
 	static uint8_t last_key = 0;
 	// printf("%d\n",gpio_get_level(GPIO_NUM_21));
-	if(gpio_get_level(GPIO_NUM_19)) { // Select DOWN
+	if(gpio_get_level(GPIO_NUM_19) && Current_Screen != MENU_SCREEN) { // Select DOWN
 		data->state = LV_BTN_STATE_PR;
 		printf("Change to MENU\n");
 		last_key = LV_KEY_HOME;
-		Current_Screen = MENU_SCREEN;
+		Next_Screen = MENU_SCREEN;
 		Change_Screen = 1;
 	}else data->state = LV_BTN_STATE_REL;
 
