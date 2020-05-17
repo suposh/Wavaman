@@ -69,9 +69,6 @@ void guiTask() {
     static lv_disp_buf_t disp_buf;
 
 	static lv_obj_t *tabview, *tab1, *tab2;		//Create tabs
-    static lv_obj_t *list1, *list_btn ;			/*Create a list*/
-	static lv_group_t * g;
-	static lv_obj_t * te = NULL;
 
     lv_disp_buf_init(&disp_buf, buf1, buf2, DISP_BUF_SIZE);
 
@@ -98,19 +95,33 @@ void guiTask() {
     //On ESP32 it's better to create a periodic task instead of esp_register_freertos_tick_hook
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 10*1000)); //10ms (expressed as microseconds)
 
-	static lv_indev_drv_t keypad_list1;
-	lv_indev_drv_init(&keypad_list1);             /*Basic initialization*/
-	keypad_list1.type = LV_INDEV_TYPE_KEYPAD;     /*See below.*/
-	keypad_list1.read_cb = button_read;           /*See below.*/
+	static lv_indev_drv_t keypad_UP_DOWN;
+	lv_indev_drv_init(&keypad_UP_DOWN);             /*Basic initialization*/
+	keypad_UP_DOWN.type = LV_INDEV_TYPE_KEYPAD;     /*See below.*/
+	keypad_UP_DOWN.read_cb = keypad_UP_DOWN_cb;           /*See below.*/
 	/*Register the driver in LittlevGL and save the created input device object*/
-	lv_indev_t * list_input_keypad = lv_indev_drv_register(&keypad_list1);
+	lv_indev_t * keypad_UD_Button = lv_indev_drv_register(&keypad_UP_DOWN);
 
-	static lv_indev_drv_t keypad_back;
-	lv_indev_drv_init(&keypad_back);             /*Basic initialization*/
-	keypad_back.type = LV_INDEV_TYPE_KEYPAD;     /*See below.*/
-	keypad_back.read_cb = back_button;           /*See below.*/
+	static lv_indev_drv_t keypad_Back;
+	lv_indev_drv_init(&keypad_Back);             /*Basic initialization*/
+	keypad_Back.type = LV_INDEV_TYPE_KEYPAD;     /*See below.*/
+	keypad_Back.read_cb = keypad_Back_cb;           /*See below.*/
 	/*Register the driver in LittlevGL and save the created input device object*/
-	lv_indev_t * back_button_keypad = lv_indev_drv_register(&keypad_back);
+	lv_indev_t * keypad_Back_Button = lv_indev_drv_register(&keypad_Back);
+
+	static lv_indev_drv_t keypad_LR_DOWN;
+	lv_indev_drv_init(&keypad_LR_DOWN);             /*Basic initialization*/
+	keypad_LR_DOWN.type = LV_INDEV_TYPE_KEYPAD;     /*See below.*/
+	keypad_LR_DOWN.read_cb = keypad_LEFT_RIGHT_cb;           /*See below.*/
+	/*Register the driver in LittlevGL and save the created input device object*/
+	lv_indev_t * keypad_LR_Button = lv_indev_drv_register(&keypad_LR_DOWN);
+
+	static lv_indev_drv_t keypad_ENTER;
+	lv_indev_drv_init(&keypad_ENTER);             /*Basic initialization*/
+	keypad_ENTER.type = LV_INDEV_TYPE_KEYPAD;     /*See below.*/
+	keypad_ENTER.read_cb = keypad_ENTER_cb;           /*See below.*/
+	/*Register the driver in LittlevGL and save the created input device object*/
+	lv_indev_t * keypad_ENTER_Button = lv_indev_drv_register(&keypad_ENTER);
 
 	gpio_config_t io_conf;
 	io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
@@ -121,13 +132,19 @@ void guiTask() {
 	io_conf.pin_bit_mask = GPIO_SEL_21; // Select
 	gpio_config(&io_conf);
 
-	io_conf.pin_bit_mask = GPIO_SEL_22; // Select UP
+	io_conf.pin_bit_mask = GPIO_SEL_22; // UP Button
 	gpio_config(&io_conf);
 
-	io_conf.pin_bit_mask = GPIO_SEL_23; // Select Down
+	io_conf.pin_bit_mask = GPIO_SEL_23; // Down Button
 	gpio_config(&io_conf);
 
 	io_conf.pin_bit_mask = GPIO_SEL_19; // Back
+	gpio_config(&io_conf);
+
+	io_conf.pin_bit_mask = GPIO_SEL_16; // Right Button
+	gpio_config(&io_conf);
+
+	io_conf.pin_bit_mask = GPIO_SEL_17; // Left Button
 	gpio_config(&io_conf);
 
 	/*Create a Tab view object*/
@@ -162,6 +179,14 @@ void guiTask() {
 	lv_style_t style5 = lv_style_transp_fit; //lv_style_pretty
 	lv_style_t style6 = lv_style_pretty;
 
+	static lv_obj_t *menulist = NULL, *list_btn ;			/*Create a list*/
+	static lv_group_t * menulist_input_group = NULL;
+
+	static lv_obj_t * trial_text_label = NULL;
+
+	static lv_obj_t * spinbox_frequency = NULL;
+	static lv_group_t * spinbox_input_group = NULL;
+	lv_style_t *spinbox_cursor_style, *spinbox_text_style;
 
     while (1) {
         vTaskDelay(1);
@@ -175,38 +200,41 @@ void guiTask() {
 
 		if (Change_Screen){
 			switch (Current_Screen){
-			    case MENU_SCREEN:
-					if(te != NULL){
-						lv_obj_del(te);
-						lv_obj_set_hidden(te, true);
-						lv_obj_set_hidden(list1, false);
+			    case MENU_SCREEN:			//DELETE items on menu screen
+					if(menulist != NULL){
+						lv_group_del(menulist_input_group);
+						menulist_input_group = NULL;
+						lv_obj_set_hidden(menulist, false);
+						lv_obj_del(menulist);
 					}
 					lv_tabview_clean(tab1);
 					printf("Delete Menu objects\n");
 			        break;
 			    case MENU_FREQUENCY_SET_SCREEN:
-					lv_obj_del(te);
-					lv_obj_set_hidden(te, true);
+					printf("Delete old FREQUENCY stuff\n");
+					lv_group_del(spinbox_input_group);
+					lv_indev_enable(keypad_LR_Button, false);
+					lv_obj_del(spinbox_frequency);
 					lv_tabview_clean(tab1);
 			        break;
 				case MENU_AMPLITUDE_SET_SCREEN:
-					lv_obj_del(te);
-					lv_obj_set_hidden(te, true);
+					lv_obj_del(trial_text_label);
+					lv_obj_set_hidden(trial_text_label, true);
 					lv_tabview_clean(tab1);
 			        break;
 				case MENU_WAVEFORM_SET_SCREEN:
-					lv_obj_del(te);
-					lv_obj_set_hidden(te, true);
+					lv_obj_del(trial_text_label);
+					lv_obj_set_hidden(trial_text_label, true);
 					lv_tabview_clean(tab1);
 					break;
 				case MENU_LOGIC_SET_SCREEN:
-					lv_obj_del(te);
-					lv_obj_set_hidden(te, true);
+					lv_obj_del(trial_text_label);
+					lv_obj_set_hidden(trial_text_label, true);
 					lv_tabview_clean(tab1);
 					break;
 			    case MENU_STATS_SET_SCREEN:
-					lv_obj_del(te);
-					lv_obj_set_hidden(te, true);
+					lv_obj_del(trial_text_label);
+					lv_obj_set_hidden(trial_text_label, true);
 					lv_tabview_clean(tab1);
 					break;
 			}
@@ -214,23 +242,23 @@ void guiTask() {
 
 				case MENU_SCREEN:
 					printf("MENU_SCREEN\n");
-					list1 = lv_list_create(tab1, NULL);
-					lv_obj_set_size(list1, 128, 50);
-					lv_obj_align(list1, NULL,  LV_ALIGN_IN_TOP_LEFT, 0, 0);
-					lv_list_set_anim_time(list1, 60);
-					lv_list_set_sb_mode(list1, LV_SB_MODE_OFF); 	// LIST Disable Scroll Bar
-					lv_list_set_single_mode(list1, true);
+					menulist = lv_list_create(tab1, NULL);
+					lv_obj_set_size(menulist, 128, 50);
+					lv_obj_align(menulist, NULL,  LV_ALIGN_IN_TOP_LEFT, 0, 0);
+					lv_list_set_anim_time(menulist, 60);
+					lv_list_set_sb_mode(menulist, LV_SB_MODE_OFF); 	// LIST Disable Scroll Bar
+					lv_list_set_single_mode(menulist, true);
 
 					style4.body.border.width =0;
 					style4.body.padding.left = -1;
 					style4.body.padding.right = -1;
 					// style4.body.padding.top = 0;
-					lv_list_set_style(list1, LV_LIST_STYLE_BG, &style4);
+					lv_list_set_style(menulist, LV_LIST_STYLE_BG, &style4);
 
 					style5.body.padding.inner = -3;
 					style5.body.border.width = 0;
 					// style5.body.padding.top = -5;
-					lv_list_set_style(list1, LV_LIST_STYLE_SCRL, &style5);
+					lv_list_set_style(menulist, LV_LIST_STYLE_SCRL, &style5);
 
 					// To adjust the height of an individual list button,
 					// dimensions of the container need to be changed.
@@ -239,69 +267,95 @@ void guiTask() {
 					style6.body.radius = 0;
 
 					// Long Strings cause glitchy scroll, in the button label.
-					list_btn = lv_list_add_btn(list1, NULL, "1.Frequency");
+					list_btn = lv_list_add_btn(menulist, NULL, "1.Frequency");
 					lv_obj_set_event_cb(list_btn, select_frequency);
 					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-					// lv_group_add_obj(g, list_btn);
 
-					list_btn = lv_list_add_btn(list1, NULL, "2.Amplitude");
+					list_btn = lv_list_add_btn(menulist, NULL, "2.Amplitude");
 					lv_obj_set_event_cb(list_btn, select_amplitude);
 					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-					// lv_group_add_obj(g, list_btn);
 
-					list_btn = lv_list_add_btn(list1, NULL, "3.Waveform");
+					list_btn = lv_list_add_btn(menulist, NULL, "3.Waveform");
 					lv_obj_set_event_cb(list_btn, select_waveform);
 					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-					// lv_list_set_btn_selected(list1, list_btn);
-					// lv_group_add_obj(g, list_btn);
+					// lv_list_set_btn_selected(menulist, list_btn);
 
-					list_btn = lv_list_add_btn(list1, NULL, "4.Logic In");
+					list_btn = lv_list_add_btn(menulist, NULL, "4.Logic In");
 					lv_obj_set_event_cb(list_btn, select_logic);
 					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-					// lv_group_add_obj(g, list_btn);
 
-					list_btn = lv_list_add_btn(list1, NULL, "5.Stats");
+					list_btn = lv_list_add_btn(menulist, NULL, "5.Stats");
 					lv_obj_set_event_cb(list_btn, select_stats);
 					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
 
-					g = lv_group_create();
-					lv_group_add_obj(g, list1);
-					lv_indev_set_group(list_input_keypad, g);
+					menulist_input_group = lv_group_create();
+					lv_group_add_obj(menulist_input_group, menulist);
+					lv_indev_set_group(keypad_UD_Button, menulist_input_group);
+					lv_indev_set_group(keypad_ENTER_Button, menulist_input_group);
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_FREQUENCY_SET_SCREEN:
 					printf("SET_FREQUENCY\n");
-					te = lv_label_create(tab1, NULL);
-					lv_label_set_text(te, "SET_FREQUENCY");
+					spinbox_frequency = lv_spinbox_create(lv_scr_act(), NULL);
+					lv_spinbox_set_digit_format(spinbox_frequency, 9, 0);
+					lv_spinbox_step_prev(spinbox_frequency);
+					lv_obj_set_width(spinbox_frequency, 110);
+					lv_spinbox_set_range(spinbox_frequency, 1, 268435456);
+					lv_obj_align(spinbox_frequency, NULL, LV_ALIGN_CENTER, 0, 0);
+					lv_obj_set_event_cb(spinbox_frequency, spinbox_frequency_cb);
+
+					// spinbox_text_style = lv_spinbox_get_style(spinbox_frequency, LV_LABEL_STYLE_MAIN);
+					// spinbox_text_style->text.letter_space = 2;
+					// lv_spinbox_set_style(spinbox_frequency, LV_LABEL_STYLE_MAIN, spinbox_text_style);
+
+
+					spinbox_cursor_style = lv_spinbox_get_style(spinbox_frequency, LV_SPINBOX_STYLE_CURSOR);
+					// spinbox_cursor_style->line.width = 1;
+					spinbox_cursor_style->body.radius = 2;
+					// spinbox_cursor_style.body.padding.inner  = 3;
+					spinbox_cursor_style->body.padding.right = 1;
+					spinbox_cursor_style->body.padding.left  = 2;
+					spinbox_cursor_style->body.padding.top = 5;
+					spinbox_cursor_style->body.padding.bottom = 3;
+					// spinbox_cursor_style->body.opa = LV_OPA_TRANSP;
+					lv_spinbox_set_style(spinbox_frequency,LV_SPINBOX_STYLE_CURSOR, spinbox_cursor_style);
+					// lv_spinbox_set_padding_left(spinbox_frequency, 1);
+
+					spinbox_input_group = lv_group_create();
+					lv_group_add_obj(spinbox_input_group, spinbox_frequency);
+					lv_indev_set_group(keypad_UD_Button, spinbox_input_group);
+					lv_indev_set_group(keypad_ENTER_Button, spinbox_input_group);
+					lv_indev_set_group(keypad_LR_Button, spinbox_input_group);
+					lv_indev_enable(keypad_LR_Button, true);
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_AMPLITUDE_SET_SCREEN:
 					printf("SET_AMPLITUDE\n");
-					te = lv_label_create(tab1, NULL);
-					lv_label_set_text(te, "SET_AMPLITUDE");
+					trial_text_label = lv_label_create(tab1, NULL);
+					lv_label_set_text(trial_text_label, "SET_AMPLITUDE");
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_WAVEFORM_SET_SCREEN:
 					printf("SET_WAVEFORM\n");
-					te = lv_label_create(tab1, NULL);
-					lv_label_set_text(te, "SET_WAVEFORM");
+					trial_text_label = lv_label_create(tab1, NULL);
+					lv_label_set_text(trial_text_label, "SET_WAVEFORM");
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_LOGIC_SET_SCREEN:
 					printf("SET_LOGIC_IN\n");
-					te = lv_label_create(tab1, NULL);
-					lv_label_set_text(te, "SET_LOGIC_IN");
+					trial_text_label = lv_label_create(tab1, NULL);
+					lv_label_set_text(trial_text_label, "SET_LOGIC_IN");
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_STATS_SET_SCREEN:
 					printf("OPEN_STATS\n");
-					te = lv_label_create(tab1, NULL);
-					lv_label_set_text(te, "OPEN_STATS");
+					trial_text_label = lv_label_create(tab1, NULL);
+					lv_label_set_text(trial_text_label, "OPEN_STATS");
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
@@ -320,7 +374,7 @@ static void select_frequency(lv_obj_t * obj, lv_event_t event){
 		Next_Screen = MENU_FREQUENCY_SET_SCREEN;
 		lv_list_focus(obj, LV_ANIM_ON);
 		Change_Screen = 1;
-		// lv_list_set_btn_selected(list1, obj);
+		// lv_list_set_btn_selected(menulist, obj);
     }
 	// else printf("NO select_frequency %d\n", event);
 }
@@ -365,15 +419,11 @@ static void select_stats(lv_obj_t * obj, lv_event_t event){
 	// else printf("NO select_logic %d\n", event);
 }
 
-static bool button_read(lv_indev_drv_t * drv, lv_indev_data_t*data){
+static bool keypad_UP_DOWN_cb(lv_indev_drv_t * drv, lv_indev_data_t*data){
 
 	static uint8_t last_key = 0;
 	// printf("%d\n",gpio_get_level(GPIO_NUM_21));
-	if(gpio_get_level(GPIO_NUM_21)) {
-		data->state = LV_BTN_STATE_PR;
-		// printf("button_read 1\n");
-		last_key = LV_KEY_ENTER;
-	}else if(gpio_get_level(GPIO_NUM_22)) { // Select UP
+	if(gpio_get_level(GPIO_NUM_22)) { // Select UP
 		data->state = LV_BTN_STATE_PR;
 		// printf("button_read 1\n");
 		last_key = LV_KEY_UP;
@@ -387,7 +437,7 @@ static bool button_read(lv_indev_drv_t * drv, lv_indev_data_t*data){
 
 	return false; /*No buffering now so no more data read*/
 }
-static bool back_button(lv_indev_drv_t * drv, lv_indev_data_t*data){
+static bool keypad_Back_cb(lv_indev_drv_t * drv, lv_indev_data_t*data){
 	static uint8_t last_key = 0;
 	// printf("%d\n",gpio_get_level(GPIO_NUM_21));
 	if(gpio_get_level(GPIO_NUM_19) && Current_Screen != MENU_SCREEN) { // Select DOWN
@@ -401,4 +451,43 @@ static bool back_button(lv_indev_drv_t * drv, lv_indev_data_t*data){
 	data->key = last_key;            /*Get the last pressed or released key*/
 
 	return false; /*No buffering now so no more data read*/
+}
+static bool keypad_ENTER_cb(lv_indev_drv_t * drv, lv_indev_data_t*data){
+	static uint8_t last_key = 0;
+	// printf("%d\n",gpio_get_level(GPIO_NUM_21));
+	if(gpio_get_level(GPIO_NUM_21)) {
+		data->state = LV_BTN_STATE_PR;
+		// printf("button_read 1\n");
+		last_key = LV_KEY_ENTER;
+	}
+	else data->state = LV_BTN_STATE_REL;
+	data->key = last_key;            /*Get the last pressed or released key*/
+	return false; /*No buffering now so no more data read*/
+}
+static bool keypad_LEFT_RIGHT_cb(lv_indev_drv_t * drv, lv_indev_data_t*data){
+	static uint8_t last_key = 0;
+	// printf("%d\n",gpio_get_level(GPIO_NUM_21));
+	if(gpio_get_level(GPIO_NUM_17)) { 		// Select Left
+		data->state = LV_BTN_STATE_PR;
+		// printf("button_read 1\n");
+		last_key = LV_KEY_LEFT;
+	}else if(gpio_get_level(GPIO_NUM_16)) { // Select Right
+		data->state = LV_BTN_STATE_PR;
+		// printf("button_read 1\n");
+		last_key = LV_KEY_RIGHT;
+	}else data->state = LV_BTN_STATE_REL;
+
+	data->key = last_key;            /*Ge-> the last pressed or released key*/
+
+	return false; /*No buffering now so no more data read*/
+}
+static void spinbox_frequency_cb(lv_obj_t * obj, lv_event_t event)
+{
+    if(event == LV_EVENT_VALUE_CHANGED) {
+        printf("Value: %d\n", lv_spinbox_get_value(obj));
+    }
+    else if(event == LV_EVENT_CLICKED) {
+        /*For simple test: Click the spinbox to increment its value*/
+        lv_spinbox_increment(obj);
+    }
 }
