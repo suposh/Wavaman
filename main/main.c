@@ -22,21 +22,20 @@
 #define TAG "Wave"
 
 
-#define MENU_SCREEN 1
-#define MENU_FREQUENCY_SET_SCREEN 10
-#define MENU_AMPLITUDE_SET_SCREEN 11
-#define MENU_WAVEFORM_SET_SCREEN  12
-#define MENU_LOGIC_SET_SCREEN     13
-#define MENU_STATS_SET_SCREEN     20
-/**********************
- *  STATIC PROTOTYPES
- **********************/
-static void IRAM_ATTR lv_tick_task(void *arg);
-// static void event_handler(lv_obj_t * obj, lv_event_t event);
+#define MENU_SCREEN 10
+#define MENU_FREQUENCY_SET_SCREEN 0
+#define MENU_AMPLITUDE_SET_SCREEN 1
+#define MENU_WAVEFORM_SET_SCREEN  2
+#define MENU_LOGIC_SET_SCREEN     3
+#define MENU_STATS_SET_SCREEN     4
 
-static uint8_t Current_Screen = 1;
+// Static Variables and Structs
+static uint8_t Current_Screen = MENU_FREQUENCY_SET_SCREEN;
 static uint8_t Change_Screen  = 1;
-static uint8_t Next_Screen    = 1;
+static uint8_t Next_Screen    = MENU_SCREEN;
+
+static struct MENU_DATA  MENU_CONFIG;
+
 /**********************
  *   APPLICATION MAIN
  **********************/
@@ -67,6 +66,11 @@ void guiTask() {
     static lv_color_t buf1[DISP_BUF_SIZE];
     static lv_color_t buf2[DISP_BUF_SIZE];
     static lv_disp_buf_t disp_buf;
+
+	MENU_CONFIG.frequency = 5;
+	MENU_CONFIG.amplitude = 1;
+	MENU_CONFIG.waveform = 0;
+	MENU_CONFIG.gain = 1;
 
 	static lv_obj_t *tabview, *tab0, *tab1;		//Create tabs
 
@@ -183,7 +187,7 @@ void guiTask() {
 	lv_style_t style5 = lv_style_transp_fit; //lv_style_pretty
 	lv_style_t style6 = lv_style_pretty;
 
-	static lv_obj_t *menulist = NULL, *list_btn ;			/*Create a list*/
+	static lv_obj_t *menulist = NULL, *list_btn[5] ;			/*Create a list*/
 	static lv_group_t * menulist_input_group = NULL;
 
 	static lv_obj_t * trial_text_label = NULL;
@@ -206,33 +210,37 @@ void guiTask() {
 			// vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
 
-		if (Change_Screen){
+		if (Change_Screen){							//DELETE Old Objects
 			switch (Current_Screen){
-			    case MENU_SCREEN:			//DELETE items on menu screen
+				case MENU_SCREEN:
 					if(menulist != NULL){
 						lv_group_del(menulist_input_group);
 						menulist_input_group = NULL;
-						lv_obj_set_hidden(menulist, false);
+						// lv_obj_set_hidden(menulist, false);
 						lv_obj_del(menulist);
 					}
 					lv_tabview_clean(tab0);
 					lv_tabview_clean(tab1);
 					printf("Deleted Menu objects\n");
-			        break;
-			    case MENU_FREQUENCY_SET_SCREEN:
-					printf("Delete old FREQUENCY stuff\n");
-					lv_group_del(spinbox_input_group);
-					lv_indev_enable(keypad_LR_Button, false);
-					lv_obj_del(spinbox_frequency);
+					break;
+				case MENU_FREQUENCY_SET_SCREEN:
+					if(menulist != NULL){
+						MENU_CONFIG.frequency = lv_spinbox_get_value(spinbox_frequency);
+						printf("Delete old FREQUENCY stuff\n");
+						lv_group_del(spinbox_input_group);
+						lv_indev_enable(keypad_LR_Button, false);
+						lv_obj_del(spinbox_frequency);
+					}
 					lv_tabview_clean(tab0);
-			        break;
+					break;
 				case MENU_AMPLITUDE_SET_SCREEN:
 					lv_obj_del(trial_text_label);
 					lv_obj_set_hidden(trial_text_label, true);
 					lv_tabview_clean(tab0);
-			        break;
+					break;
 				case MENU_WAVEFORM_SET_SCREEN:
-					printf("Delete old WAVEFORM stuff\n");
+					MENU_CONFIG.waveform = lv_roller_get_selected(roller_waveform);
+					printf("Delete old WAVEFORM stuff %d\n",MENU_CONFIG.waveform);
 					lv_group_del(roller_input_group);
 					lv_obj_set_hidden(roller_waveform, true);
 					// lv_obj_del(roller_waveform);
@@ -244,7 +252,7 @@ void guiTask() {
 					lv_obj_set_hidden(trial_text_label, true);
 					lv_tabview_clean(tab0);
 					break;
-			    case MENU_STATS_SET_SCREEN:
+				case MENU_STATS_SET_SCREEN:
 					printf("Delete old STATS stuff\n");
 					lv_obj_del(trial_text_label);
 					// lv_group_del(spinbox_input_group);
@@ -253,7 +261,7 @@ void guiTask() {
 					lv_tabview_clean(tab1);
 					break;
 			}
-			switch (Next_Screen){
+			switch (Next_Screen){					//Draw New Objects
 
 				case MENU_SCREEN:
 					printf("MENU_SCREEN\n");
@@ -283,32 +291,33 @@ void guiTask() {
 					style6.body.radius = 0;
 
 					// Long Strings cause glitchy scroll, in the button label.
-					list_btn = lv_list_add_btn(menulist, NULL, "1.Frequency");
-					lv_obj_set_event_cb(list_btn, select_frequency);
-					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					list_btn[0] = lv_list_add_btn(menulist, NULL, "1.Frequency");
+					lv_obj_set_event_cb(list_btn[0], select_frequency);
+					lv_btn_set_style(list_btn[0],LV_CONT_STYLE_MAIN, &style6);
+					// lv_list_set_btn_selected(menulist, list_btn[0]);
 
-					list_btn = lv_list_add_btn(menulist, NULL, "2.Amplitude");
-					lv_obj_set_event_cb(list_btn, select_amplitude);
-					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					list_btn[1] = lv_list_add_btn(menulist, NULL, "2.Amplitude");
+					lv_obj_set_event_cb(list_btn[1], select_amplitude);
+					lv_btn_set_style(list_btn[1],LV_CONT_STYLE_MAIN, &style6);
 
-					list_btn = lv_list_add_btn(menulist, NULL, "3.Waveform");
-					lv_obj_set_event_cb(list_btn, select_waveform);
-					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
-					// lv_list_set_btn_selected(menulist, list_btn);
+					list_btn[2] = lv_list_add_btn(menulist, NULL, "3.Waveform");
+					lv_obj_set_event_cb(list_btn[2], select_waveform);
+					lv_btn_set_style(list_btn[2],LV_CONT_STYLE_MAIN, &style6);
+					// lv_list_set_btn_selected(menulist, list_btn[2]);
 
-					list_btn = lv_list_add_btn(menulist, NULL, "4.Logic In");
-					lv_obj_set_event_cb(list_btn, select_logic);
-					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					list_btn[3] = lv_list_add_btn(menulist, NULL, "4.Logic In");
+					lv_obj_set_event_cb(list_btn[3], select_logic);
+					lv_btn_set_style(list_btn[3],LV_CONT_STYLE_MAIN, &style6);
 
-					list_btn = lv_list_add_btn(menulist, NULL, "5.Stats");
-					lv_obj_set_event_cb(list_btn, select_stats);
-					lv_btn_set_style(list_btn,LV_CONT_STYLE_MAIN, &style6);
+					list_btn[4] = lv_list_add_btn(menulist, NULL, "5.Stats");
+					lv_obj_set_event_cb(list_btn[4], select_stats);
+					lv_btn_set_style(list_btn[4],LV_CONT_STYLE_MAIN, &style6);
 
 					menulist_input_group = lv_group_create();
 					lv_group_add_obj(menulist_input_group, menulist);
 					lv_indev_set_group(keypad_UD_Button, menulist_input_group);
 					lv_indev_set_group(keypad_ENTER_Button, menulist_input_group);
-					// lv_tabview_set_tab_act(tabview, 0, LV_ANIM_ON);
+					lv_list_set_btn_selected(menulist, list_btn[Current_Screen]);
 
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
@@ -321,7 +330,7 @@ void guiTask() {
 					lv_obj_set_width(spinbox_frequency, 110);
 					lv_spinbox_set_range(spinbox_frequency, 1, 268435456);
 					lv_obj_set_event_cb(spinbox_frequency, spinbox_frequency_cb);
-
+					lv_spinbox_set_value(spinbox_frequency, MENU_CONFIG.frequency);
 					spinbox_text_style = lv_spinbox_get_style(spinbox_frequency, LV_LABEL_STYLE_MAIN);
 					spinbox_text_style->text.letter_space = 4;
 					lv_spinbox_set_style(spinbox_frequency, LV_LABEL_STYLE_MAIN, spinbox_text_style);
@@ -383,6 +392,7 @@ void guiTask() {
 
 				    lv_roller_set_visible_row_count(roller_waveform, 2);
 				    lv_obj_align(roller_waveform, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -4);
+					lv_roller_set_selected(roller_waveform, MENU_CONFIG.waveform, LV_ANIM_ON);
 				    lv_obj_set_event_cb(roller_waveform, roller_waveform_cb);
 
 					trial_text_label = lv_label_create(tab0, NULL);
@@ -410,7 +420,7 @@ void guiTask() {
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_STATS_SET_SCREEN:
-					lv_tabview_set_tab_act(tabview, 1, LV_ANIM_ON);
+					lv_tabview_set_tab_act(tabview, 1, LV_ANIM_OFF);
 					printf("OPEN_STATS\n");
 					trial_text_label = lv_label_create(tab1, NULL);
 					lv_label_set_text(trial_text_label, "STATS_HERE");
@@ -554,6 +564,6 @@ static void roller_waveform_cb(lv_obj_t * obj, lv_event_t event){
 	if(event == LV_EVENT_VALUE_CHANGED) {
         char buf[32];
         lv_roller_get_selected_str(obj, buf, sizeof(buf));
-        printf("Selected month: %s\n", buf);
+        printf("Selected waveform: %s\n", buf);
     }
 }
