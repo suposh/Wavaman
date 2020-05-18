@@ -192,6 +192,10 @@ void guiTask() {
 	static lv_group_t * spinbox_input_group = NULL;
 	lv_style_t *spinbox_cursor_style, *spinbox_text_style;
 
+	static lv_obj_t * roller_waveform = NULL;
+	lv_style_t *roller_text_style = NULL;
+	static lv_group_t *roller_input_group = NULL;
+
     while (1) {
         vTaskDelay(1);
         //Try to lock the semaphore, if success, call lvgl stuff
@@ -216,12 +220,10 @@ void guiTask() {
 					printf("Deleted Menu objects\n");
 			        break;
 			    case MENU_FREQUENCY_SET_SCREEN:
-					if(spinbox_frequency != NULL){
-						printf("Delete old FREQUENCY stuff\n");
-						lv_group_del(spinbox_input_group);
-						lv_indev_enable(keypad_LR_Button, false);
-						lv_obj_del(spinbox_frequency);
-					}
+					printf("Delete old FREQUENCY stuff\n");
+					lv_group_del(spinbox_input_group);
+					lv_indev_enable(keypad_LR_Button, false);
+					lv_obj_del(spinbox_frequency);
 					lv_tabview_clean(tab0);
 			        break;
 				case MENU_AMPLITUDE_SET_SCREEN:
@@ -230,8 +232,11 @@ void guiTask() {
 					lv_tabview_clean(tab0);
 			        break;
 				case MENU_WAVEFORM_SET_SCREEN:
-					lv_obj_del(trial_text_label);
-					lv_obj_set_hidden(trial_text_label, true);
+					printf("Delete old WAVEFORM stuff\n");
+					lv_group_del(roller_input_group);
+					lv_obj_set_hidden(roller_waveform, true);
+					// lv_obj_del(roller_waveform);
+					// roller_waveform=NULL;
 					lv_tabview_clean(tab0);
 					break;
 				case MENU_LOGIC_SET_SCREEN:
@@ -343,6 +348,7 @@ void guiTask() {
 
 					trial_text_label = lv_label_create(tab0, NULL);
 					lv_label_set_text(trial_text_label, "Set Frequency:");
+
 					lv_obj_align(spinbox_frequency, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -8);
 
 					spinbox_text_style = lv_label_get_style(trial_text_label, LV_LABEL_STYLE_MAIN);
@@ -368,8 +374,31 @@ void guiTask() {
 					break;
 				case MENU_WAVEFORM_SET_SCREEN:
 					printf("SET_WAVEFORM\n");
+					roller_waveform = lv_roller_create(lv_scr_act(), NULL);
+				    lv_roller_set_options(roller_waveform,
+				                        "Sinosoid\n"
+				                        "Triangular\n"
+				                        "Square",
+				                        LV_ROLLER_MODE_NORMAL);
+
+				    lv_roller_set_visible_row_count(roller_waveform, 2);
+				    lv_obj_align(roller_waveform, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -4);
+				    lv_obj_set_event_cb(roller_waveform, roller_waveform_cb);
+
 					trial_text_label = lv_label_create(tab0, NULL);
-					lv_label_set_text(trial_text_label, "SET_WAVEFORM");
+					lv_label_set_text(trial_text_label, "SET WAVEFORM");
+
+					roller_text_style = lv_label_get_style(trial_text_label, LV_LABEL_STYLE_MAIN);
+					roller_text_style->body.opa = LV_OPA_TRANSP;
+					roller_text_style->text.letter_space = -1;
+					lv_label_set_style(trial_text_label, LV_LABEL_STYLE_MAIN, roller_text_style);
+
+					roller_input_group = lv_group_create();
+					lv_group_add_obj(roller_input_group, roller_waveform);
+					lv_indev_set_group(keypad_UD_Button, roller_input_group);
+					lv_indev_set_group(keypad_ENTER_Button, roller_input_group);
+
+
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
@@ -519,5 +548,12 @@ static void spinbox_frequency_cb(lv_obj_t * obj, lv_event_t event)
     else if(event == LV_EVENT_CLICKED) {
         /*For simple test: Click the spinbox to increment its value*/
         lv_spinbox_increment(obj);
+    }
+}
+static void roller_waveform_cb(lv_obj_t * obj, lv_event_t event){
+	if(event == LV_EVENT_VALUE_CHANGED) {
+        char buf[32];
+        lv_roller_get_selected_str(obj, buf, sizeof(buf));
+        printf("Selected month: %s\n", buf);
     }
 }

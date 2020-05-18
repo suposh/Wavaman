@@ -28,3 +28,4 @@ static void select_logic(lv_obj_t * obj, lv_event_t event);
 static void select_stats(lv_obj_t * obj, lv_event_t event);
 
 static void spinbox_frequency_cb(lv_obj_t * obj, lv_event_t event);
+static void roller_waveform_cb(lv_obj_t * obj, lv_event_t event);
