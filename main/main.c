@@ -68,7 +68,7 @@ void guiTask() {
     static lv_color_t buf2[DISP_BUF_SIZE];
     static lv_disp_buf_t disp_buf;
 
-	static lv_obj_t *tabview, *tab1, *tab2;		//Create tabs
+	static lv_obj_t *tabview, *tab0, *tab1;		//Create tabs
 
     lv_disp_buf_init(&disp_buf, buf1, buf2, DISP_BUF_SIZE);
 
@@ -150,8 +150,9 @@ void guiTask() {
 	/*Create a Tab view object*/
 	tabview = lv_tabview_create(lv_scr_act(), NULL);
 	/*Add 2 tabs (the tabs are page (lv_page) and can be scrolled*/
-	tab1 = lv_tabview_add_tab(tabview, "SET");
-	tab2 = lv_tabview_add_tab(tabview, "STATS");
+	tab0 = lv_tabview_add_tab(tabview, "SET");
+	tab1 = lv_tabview_add_tab(tabview, "ACTIVE");
+	static lv_group_t *tabview_input_group = NULL;
 
 	lv_style_t style2 = lv_style_plain_color;
 	style2.body.padding.inner = 0;
@@ -161,19 +162,22 @@ void guiTask() {
 	style3.body.padding.top = 3;
 	style3.body.padding.bottom = 1;
 	lv_tabview_set_style(tabview, LV_TABVIEW_STYLE_BTN_REL,  &style3);
-	lv_obj_refresh_style(tabview);
 
 	lv_tabview_set_anim_time(tabview, 200);
 	lv_style_t style7 = lv_style_pretty_color; //lv_style_pretty
 	style7.body.opa = LV_OPA_TRANSP;
 	style7.body.border.width = 0;
-	lv_page_set_style(tab1, LV_PAGE_STYLE_SB, &style7);		// PAGE Scroll bar hidden
+	lv_page_set_style(tab0, LV_PAGE_STYLE_SB, &style7);		// PAGE Scroll bar hidden
 
 	lv_style_t style1 = lv_style_transp;
 	style1.body.padding.top = 1;
 	style1.body.padding.bottom = 1;
 	lv_tabview_set_style(tabview, LV_TABVIEW_STYLE_BTN_BG, &style1);
-	// menu(tabview, &style1);
+
+	// set one button to twice the rest
+	lv_tabview_ext_t * ext = (lv_tabview_ext_t *)lv_obj_get_ext_attr(tabview);
+	lv_btnm_set_btn_width(ext->btns, 1, 2);
+	lv_obj_refresh_style(tabview);
 
 	lv_style_t style4 = lv_style_transp_fit;
 	lv_style_t style5 = lv_style_transp_fit; //lv_style_pretty
@@ -207,8 +211,9 @@ void guiTask() {
 						lv_obj_set_hidden(menulist, false);
 						lv_obj_del(menulist);
 					}
+					lv_tabview_clean(tab0);
 					lv_tabview_clean(tab1);
-					printf("Delete Menu objects\n");
+					printf("Deleted Menu objects\n");
 			        break;
 			    case MENU_FREQUENCY_SET_SCREEN:
 					if(spinbox_frequency != NULL){
@@ -217,25 +222,28 @@ void guiTask() {
 						lv_indev_enable(keypad_LR_Button, false);
 						lv_obj_del(spinbox_frequency);
 					}
-					lv_tabview_clean(tab1);
+					lv_tabview_clean(tab0);
 			        break;
 				case MENU_AMPLITUDE_SET_SCREEN:
 					lv_obj_del(trial_text_label);
 					lv_obj_set_hidden(trial_text_label, true);
-					lv_tabview_clean(tab1);
+					lv_tabview_clean(tab0);
 			        break;
 				case MENU_WAVEFORM_SET_SCREEN:
 					lv_obj_del(trial_text_label);
 					lv_obj_set_hidden(trial_text_label, true);
-					lv_tabview_clean(tab1);
+					lv_tabview_clean(tab0);
 					break;
 				case MENU_LOGIC_SET_SCREEN:
 					lv_obj_del(trial_text_label);
 					lv_obj_set_hidden(trial_text_label, true);
-					lv_tabview_clean(tab1);
+					lv_tabview_clean(tab0);
 					break;
 			    case MENU_STATS_SET_SCREEN:
+					printf("Delete old STATS stuff\n");
 					lv_obj_del(trial_text_label);
+					// lv_group_del(spinbox_input_group);
+					// tabview_input_group = NULL;
 					lv_obj_set_hidden(trial_text_label, true);
 					lv_tabview_clean(tab1);
 					break;
@@ -244,7 +252,8 @@ void guiTask() {
 
 				case MENU_SCREEN:
 					printf("MENU_SCREEN\n");
-					menulist = lv_list_create(tab1, NULL);
+					lv_tabview_set_tab_act(tabview, 0, LV_ANIM_ON);
+					menulist = lv_list_create(tab0, NULL);
 					lv_obj_set_size(menulist, 128, 50);
 					lv_obj_align(menulist, NULL,  LV_ALIGN_IN_TOP_LEFT, 0, 0);
 					lv_list_set_anim_time(menulist, 60);
@@ -294,6 +303,8 @@ void guiTask() {
 					lv_group_add_obj(menulist_input_group, menulist);
 					lv_indev_set_group(keypad_UD_Button, menulist_input_group);
 					lv_indev_set_group(keypad_ENTER_Button, menulist_input_group);
+					// lv_tabview_set_tab_act(tabview, 0, LV_ANIM_ON);
+
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
@@ -307,8 +318,7 @@ void guiTask() {
 					lv_obj_set_event_cb(spinbox_frequency, spinbox_frequency_cb);
 
 					spinbox_text_style = lv_spinbox_get_style(spinbox_frequency, LV_LABEL_STYLE_MAIN);
-					spinbox_text_style->text.letter_space = 2;
-					// spinbox_text_style->body.border.width = 0;
+					spinbox_text_style->text.letter_space = 4;
 					lv_spinbox_set_style(spinbox_frequency, LV_LABEL_STYLE_MAIN, spinbox_text_style);
 
 					spinbox_text_style = lv_spinbox_get_style(spinbox_frequency, LV_SPINBOX_STYLE_BG);
@@ -331,7 +341,7 @@ void guiTask() {
 					lv_spinbox_set_padding_left(spinbox_frequency, 1);
 					lv_ta_set_cursor_blink_time(spinbox_frequency, 0);
 
-					trial_text_label = lv_label_create(tab1, NULL);
+					trial_text_label = lv_label_create(tab0, NULL);
 					lv_label_set_text(trial_text_label, "Set Frequency:");
 					lv_obj_align(spinbox_frequency, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -8);
 
@@ -351,29 +361,31 @@ void guiTask() {
 					break;
 				case MENU_AMPLITUDE_SET_SCREEN:
 					printf("SET_AMPLITUDE\n");
-					trial_text_label = lv_label_create(tab1, NULL);
+					trial_text_label = lv_label_create(tab0, NULL);
 					lv_label_set_text(trial_text_label, "SET_AMPLITUDE");
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_WAVEFORM_SET_SCREEN:
 					printf("SET_WAVEFORM\n");
-					trial_text_label = lv_label_create(tab1, NULL);
+					trial_text_label = lv_label_create(tab0, NULL);
 					lv_label_set_text(trial_text_label, "SET_WAVEFORM");
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_LOGIC_SET_SCREEN:
 					printf("SET_LOGIC_IN\n");
-					trial_text_label = lv_label_create(tab1, NULL);
+					trial_text_label = lv_label_create(tab0, NULL);
 					lv_label_set_text(trial_text_label, "SET_LOGIC_IN");
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_STATS_SET_SCREEN:
+					lv_tabview_set_tab_act(tabview, 1, LV_ANIM_ON);
 					printf("OPEN_STATS\n");
 					trial_text_label = lv_label_create(tab1, NULL);
-					lv_label_set_text(trial_text_label, "OPEN_STATS");
+					lv_label_set_text(trial_text_label, "STATS_HERE");
+					lv_obj_align(trial_text_label, NULL,  LV_ALIGN_CENTER, 0, 0);
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
