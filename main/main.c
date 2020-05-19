@@ -324,6 +324,7 @@ void guiTask() {
 					break;
 				case MENU_FREQUENCY_SET_SCREEN:
 					printf("SET_FREQUENCY\n");
+					lv_tabview_set_tab_act(tabview, 0, LV_ANIM_ON);
 					spinbox_frequency = lv_spinbox_create(lv_scr_act(), NULL);
 					lv_spinbox_set_digit_format(spinbox_frequency, 9, 0);
 					lv_spinbox_step_prev(spinbox_frequency);
@@ -376,6 +377,7 @@ void guiTask() {
 					break;
 				case MENU_AMPLITUDE_SET_SCREEN:
 					printf("SET_AMPLITUDE\n");
+					lv_tabview_set_tab_act(tabview, 0, LV_ANIM_ON);
 					trial_text_label = lv_label_create(tab0, NULL);
 					lv_label_set_text(trial_text_label, "SET_AMPLITUDE");
 					Change_Screen = 0;
@@ -383,6 +385,7 @@ void guiTask() {
 					break;
 				case MENU_WAVEFORM_SET_SCREEN:
 					printf("SET_WAVEFORM\n");
+					lv_tabview_set_tab_act(tabview, 0, LV_ANIM_ON);
 					roller_waveform = lv_roller_create(lv_scr_act(), NULL);
 				    lv_roller_set_options(roller_waveform,
 				                        "Sinosoid\n"
@@ -414,13 +417,14 @@ void guiTask() {
 					break;
 				case MENU_LOGIC_SET_SCREEN:
 					printf("SET_LOGIC_IN\n");
+					lv_tabview_set_tab_act(tabview, 0, LV_ANIM_ON);
 					trial_text_label = lv_label_create(tab0, NULL);
 					lv_label_set_text(trial_text_label, "SET_LOGIC_IN");
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
 				case MENU_STATS_SET_SCREEN:
-					lv_tabview_set_tab_act(tabview, 1, LV_ANIM_OFF);
+					lv_tabview_set_tab_act(tabview, 1, LV_ANIM_ON);
 					printf("OPEN_STATS\n");
 					trial_text_label = lv_label_create(tab1, NULL);
 					lv_label_set_text(trial_text_label, "STATS_HERE");
