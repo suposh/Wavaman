@@ -200,6 +200,15 @@ void guiTask() {
 	lv_style_t *roller_text_style = NULL;
 	static lv_group_t *roller_input_group = NULL;
 
+	static lv_obj_t *frequency_status_label = NULL,*frequency_status_value = NULL;
+	static lv_obj_t *amplitude_status_label = NULL,*amplitude_status_value = NULL;
+	static lv_obj_t *waveform_status_label  = NULL,*waveform_status_value  = NULL;
+	static char freq[20];
+
+	char waveform_name[3][12] = {"Sinosoid","Triangular", "Square"};
+
+
+
     while (1) {
         vTaskDelay(1);
         //Try to lock the semaphore, if success, call lvgl stuff
@@ -254,11 +263,11 @@ void guiTask() {
 					break;
 				case MENU_STATS_SET_SCREEN:
 					printf("Delete old STATS stuff\n");
-					lv_obj_del(trial_text_label);
-					// lv_group_del(spinbox_input_group);
-					// tabview_input_group = NULL;
-					lv_obj_set_hidden(trial_text_label, true);
+					lv_obj_del(frequency_status_label);
+					lv_obj_del(amplitude_status_label);
+
 					lv_tabview_clean(tab1);
+					lv_tabview_set_tab_act(tabview, 0, LV_ANIM_ON);
 					break;
 			}
 			switch (Next_Screen){					//Draw New Objects
@@ -426,9 +435,36 @@ void guiTask() {
 				case MENU_STATS_SET_SCREEN:
 					lv_tabview_set_tab_act(tabview, 1, LV_ANIM_ON);
 					printf("OPEN_STATS\n");
-					trial_text_label = lv_label_create(tab1, NULL);
-					lv_label_set_text(trial_text_label, "STATS_HERE");
-					lv_obj_align(trial_text_label, NULL,  LV_ALIGN_CENTER, 0, 0);
+					lv_page_set_style(tab1, LV_PAGE_STYLE_SB, &style7);		// PAGE Scroll bar hidden
+
+					frequency_status_label = lv_label_create(tab1, NULL);
+					frequency_status_value = lv_label_create(tab1, NULL);
+
+					amplitude_status_label = lv_label_create(tab1, NULL);
+					amplitude_status_value = lv_label_create(tab1, NULL);
+
+					waveform_status_label = lv_label_create(tab1, NULL);
+					waveform_status_value = lv_label_create(tab1, NULL);
+
+					lv_label_set_text(frequency_status_label, "FREQ");
+					lv_obj_align(frequency_status_label, NULL, LV_ALIGN_IN_TOP_LEFT, 4-1, 0+8);
+					itoa(MENU_CONFIG.frequency, freq, 10);
+					strcat(freq,"Hz");
+					lv_label_set_text(frequency_status_value, freq);
+					lv_obj_align(frequency_status_value, NULL, LV_ALIGN_IN_TOP_LEFT, 48, 8);
+
+					lv_label_set_text(amplitude_status_label, "AMPL");
+					lv_obj_align(amplitude_status_label, NULL, LV_ALIGN_IN_TOP_LEFT, 4, 12+8);
+					itoa(MENU_CONFIG.amplitude, freq, 10);
+					strcat(freq,"V");
+					lv_label_set_text(amplitude_status_value, freq);
+					lv_obj_align(amplitude_status_value, NULL, LV_ALIGN_IN_TOP_LEFT, 48,12+8);
+
+					lv_label_set_text(waveform_status_label, "WAVE");
+					lv_obj_align(waveform_status_label, NULL, LV_ALIGN_IN_TOP_LEFT, 4+1, 24+8);
+					lv_label_set_text(waveform_status_value, waveform_name[MENU_CONFIG.waveform]);
+					lv_obj_align(waveform_status_value, NULL, LV_ALIGN_IN_TOP_LEFT, 48,24+8);
+
 					Change_Screen = 0;
 					Current_Screen = Next_Screen;
 					break;
